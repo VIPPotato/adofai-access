@@ -424,6 +424,7 @@
 
 	<ItemGroup>
 		<Compile Include="Core.cs" />
+		<Compile Include="MenuNarration.cs" />
 		<Compile Include="Tolk.cs" />
 	</ItemGroup>
 	
