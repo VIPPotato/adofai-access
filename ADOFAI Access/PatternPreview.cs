@@ -147,13 +147,7 @@ namespace ADOFAI_Access
                 return;
             }
 
-            if (!TryGetCurrentBeat(controller, conductor, out double currentBeat))
-            {
-                return;
-            }
-
             double nowDsp = conductor.dspTime;
-            double lookaheadLimitBeat = currentBeat + BeatsPerBar + 0.0001;
 
             List<scrFloor> floors = levelMaker.listFloors;
             for (int i = 0; i < floors.Count; i++)
@@ -165,12 +159,6 @@ namespace ADOFAI_Access
                 }
 
                 if (HandledSeqIds.Contains(floor.seqID))
-                {
-                    continue;
-                }
-
-                // Only preview notes in the next bar window.
-                if (floor.entryBeat <= currentBeat || floor.entryBeat > lookaheadLimitBeat)
                 {
                     continue;
                 }
@@ -208,9 +196,17 @@ namespace ADOFAI_Access
         {
             currentBeat = 0.0;
 
-            if (controller.state == States.Countdown || controller.state == States.Checkpoint || controller.state == States.Start)
+            if (controller.state == States.Countdown || controller.state == States.Checkpoint)
             {
-                currentBeat = conductor.beatNumber - conductor.adjustedCountdownTicks;
+                if (conductor.crotchetAtStart > 0f)
+                {
+                    // Continuous beat during countdown so first-bar preview cues can schedule before PlayerControl.
+                    currentBeat = conductor.songposition_minusi / conductor.crotchetAtStart;
+                }
+                else
+                {
+                    currentBeat = conductor.beatNumber - conductor.adjustedCountdownTicks;
+                }
                 return true;
             }
 
@@ -257,6 +253,14 @@ namespace ADOFAI_Access
             previewDueDsp = 0d;
 
             double previewBeat = targetFloor.entryBeat - BeatsPerBar;
+            if (previewBeat < 0.0)
+            {
+                float pitchEarly = conductor.song != null && conductor.song.pitch > 0f ? conductor.song.pitch : 1f;
+                double earlyLeadSeconds = conductor.crotchetAtStart * BeatsPerBar / pitchEarly;
+                previewDueDsp = conductor.dspTimeSongPosZero + targetFloor.entryTimePitchAdj - earlyLeadSeconds;
+                return true;
+            }
+
             if (TryGetEntryTimePitchAdjustedForBeat(floors, previewBeat, out double previewEntryTime))
             {
                 previewDueDsp = conductor.dspTimeSongPosZero + previewEntryTime;
