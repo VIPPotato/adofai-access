@@ -21,6 +21,7 @@ namespace ADOFAI_Access
         {
             public string Label;
             public Action Execute;
+            public bool Locked;
         }
 
         public static void Tick()
@@ -180,7 +181,8 @@ namespace ADOFAI_Access
             }
 
             MenuEntry selected = Entries[_selectedIndex];
-            MenuNarration.Speak($"{selected.Label}, {_selectedIndex + 1} of {Entries.Count}", interrupt: true);
+            string lockedSuffix = selected.Locked ? ", locked" : string.Empty;
+            MenuNarration.Speak($"{selected.Label}{lockedSuffix}, {_selectedIndex + 1} of {Entries.Count}", interrupt: true);
         }
 
         private static void ExecuteSelection()
@@ -191,6 +193,12 @@ namespace ADOFAI_Access
             }
 
             MenuEntry selected = Entries[_selectedIndex];
+            if (selected.Locked)
+            {
+                MenuNarration.Speak($"{selected.Label}, locked", interrupt: true);
+                return;
+            }
+
             selected.Execute?.Invoke();
         }
 
@@ -227,12 +235,15 @@ namespace ADOFAI_Access
                 ADOBase.GoToCalibration();
             });
 
-            AddEntry("Open custom levels", () =>
+            if (SteamIntegration.initialized)
             {
-                Close(speak: false);
-                MenuNarration.Speak("Opening custom levels", interrupt: true);
-                ADOBase.controller?.PortalTravelAction(Portal.CustomLevelsScene);
-            });
+                AddEntry("Open custom levels", () =>
+                {
+                    Close(speak: false);
+                    MenuNarration.Speak("Opening custom levels", interrupt: true);
+                    ADOBase.controller?.PortalTravelAction(Portal.CustomLevelsScene);
+                });
+            }
 
             AddEntry("Open level editor", () =>
             {
@@ -241,7 +252,7 @@ namespace ADOFAI_Access
                 ADOBase.controller?.PortalTravelAction(Portal.EditorScene);
             });
 
-            if (NeoCosmosManager.instance != null && NeoCosmosManager.instance.installed)
+            if (!GCS.FOOL_JOKER && NeoCosmosManager.instance != null && NeoCosmosManager.instance.installed)
             {
                 AddEntry("Open Neo Cosmos map", () =>
                 {
@@ -251,7 +262,7 @@ namespace ADOFAI_Access
                 });
             }
 
-            if (VegaDLCManager.instance != null && VegaDLCManager.instance.installed)
+            if (!GCS.FOOL_JOKER && VegaDLCManager.instance != null && VegaDLCManager.instance.installed)
             {
                 AddEntry("Open Vega map", () =>
                 {
@@ -261,13 +272,17 @@ namespace ADOFAI_Access
                 });
             }
 
-            IEnumerable<string> worldIds = scrPortal.portals.Keys
-                .Where(k => !string.IsNullOrEmpty(k))
-                .OrderBy(WorldSortKey)
-                .ThenBy(k => k, StringComparer.Ordinal);
+            IEnumerable<scrPortal> visiblePortals = scrPortal.portals.Values
+                .Where(p => p != null)
+                .Where(p => p.gameObject != null && p.gameObject.activeInHierarchy)
+                .Where(p => !p.hidden)
+                .OrderBy(p => WorldSortKey(p.world))
+                .ThenBy(p => p.world, StringComparer.Ordinal);
 
-            foreach (string worldId in worldIds)
+            foreach (scrPortal portal in visiblePortals)
             {
+                string worldId = portal.world;
+                bool locked = portal.locked || !IsWorldReachableByProgress(worldId);
                 string label = $"Enter world {DisplayWorldId(worldId)}";
                 string targetWorld = worldId;
                 AddEntry(label, () =>
@@ -275,16 +290,58 @@ namespace ADOFAI_Access
                     Close(speak: false);
                     MenuNarration.Speak($"Entering world {DisplayWorldId(targetWorld)}", interrupt: true);
                     ADOBase.controller?.EnterWorld(targetWorld);
-                });
+                }, locked);
             }
         }
 
-        private static void AddEntry(string label, Action execute)
+        private static bool IsWorldReachableByProgress(string world)
+        {
+            if (string.IsNullOrEmpty(world))
+            {
+                return false;
+            }
+
+            if (ADOBase.controller == null)
+            {
+                return false;
+            }
+
+            if (ADOBase.levelSelect == null)
+            {
+                return false;
+            }
+
+            if (ADOBase.levelSelect.dlcManagers.Any(x => x.IsDLCLevel(world)))
+            {
+                return false;
+            }
+
+            bool isMainLateWorld = world == "7" || world == "8" || world == "9" || world == "10" || world == "11" || world == "12" || world == "B";
+            bool isCrownWorld = world.IsCrownWorld();
+            bool isMuseDashWorld = world.IsMuseDashWorld();
+            int overallProgressStage = Persistence.GetOverallProgressStage();
+
+            if ((overallProgressStage < 3 && world == "6") || (overallProgressStage < 5 && isMainLateWorld))
+            {
+                return false;
+            }
+
+            bool isXtraOrMuseDash = world.IsXtra() || isMuseDashWorld;
+            if (overallProgressStage < 5 && isXtraOrMuseDash && !isCrownWorld && !isMuseDashWorld)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private static void AddEntry(string label, Action execute, bool locked = false)
         {
             Entries.Add(new MenuEntry
             {
                 Label = label,
-                Execute = execute
+                Execute = execute,
+                Locked = locked
             });
         }
 
