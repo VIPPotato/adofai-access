@@ -11,6 +11,7 @@ namespace ADOFAI_Access
     {
         public override void OnInitializeMelon()
         {
+            ModSettings.EnsureLoaded();
             Tolk.Load();
             HarmonyInstance.PatchAll(typeof(Core).Assembly);
             LoggerInstance.Msg("ADOFAI Access Loaded");
@@ -18,11 +19,15 @@ namespace ADOFAI_Access
 
         public override void OnLateInitializeMelon()
         {
-            Tolk.Output("ADOFAI Access loaded");
+            if (ModSettings.Current.menuNarrationEnabled)
+            {
+                Tolk.Output("ADOFAI Access loaded");
+            }
         }
 
         public override void OnUpdate()
         {
+            AccessSettingsMenu.Tick();
             MenuNarration.Tick();
             AccessibleLevelSelectMenu.Tick();
             LevelDataDump.Tick();

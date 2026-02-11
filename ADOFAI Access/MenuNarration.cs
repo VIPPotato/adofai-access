@@ -25,6 +25,18 @@ namespace ADOFAI_Access
 
         public static void Tick()
         {
+            if (AccessSettingsMenu.IsOpen)
+            {
+                _lastSelectedId = -1;
+                return;
+            }
+
+            if (!ModSettings.Current.menuNarrationEnabled)
+            {
+                _lastSelectedId = -1;
+                return;
+            }
+
             if (ADOBase.isLevelEditor)
             {
                 return;
@@ -61,7 +73,7 @@ namespace ADOFAI_Access
 
         public static void SpeakFocusedButton(GeneralPauseButton button)
         {
-            if (button == null || ADOBase.isLevelEditor)
+            if (AccessSettingsMenu.IsOpen || !ModSettings.Current.menuNarrationEnabled || button == null || ADOBase.isLevelEditor)
             {
                 return;
             }
@@ -109,7 +121,7 @@ namespace ADOFAI_Access
 
         public static void SpeakSettingValueChange(PauseSettingButton settingButton, SettingsMenu.Interaction action)
         {
-            if (settingButton == null || ADOBase.isLevelEditor)
+            if (AccessSettingsMenu.IsOpen || !ModSettings.Current.menuNarrationEnabled || settingButton == null || ADOBase.isLevelEditor)
             {
                 return;
             }
@@ -133,6 +145,11 @@ namespace ADOFAI_Access
 
         public static void Speak(string text, bool interrupt)
         {
+            if (!ModSettings.Current.menuNarrationEnabled)
+            {
+                return;
+            }
+
             string normalized = NormalizeText(text);
             if (string.IsNullOrEmpty(normalized))
             {
@@ -153,6 +170,11 @@ namespace ADOFAI_Access
 
         public static void SpeakWorldSelection(string world)
         {
+            if (AccessSettingsMenu.IsOpen || !ModSettings.Current.menuNarrationEnabled)
+            {
+                return;
+            }
+
             string normalizedWorld = NormalizeText(world);
             if (string.IsNullOrEmpty(normalizedWorld))
             {
@@ -482,6 +504,10 @@ namespace ADOFAI_Access
     {
         private static void Postfix()
         {
+            if (!ModSettings.Current.menuNarrationEnabled)
+            {
+                return;
+            }
             MenuNarration.Speak("Pause menu", interrupt: true);
         }
     }
@@ -491,6 +517,10 @@ namespace ADOFAI_Access
     {
         private static void Postfix()
         {
+            if (!ModSettings.Current.menuNarrationEnabled)
+            {
+                return;
+            }
             MenuNarration.Speak("Settings", interrupt: true);
         }
     }

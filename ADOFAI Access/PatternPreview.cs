@@ -10,10 +10,10 @@ namespace ADOFAI_Access
         private const KeyCode ToggleKey = KeyCode.F9;
         private const double CueScheduleHorizonSeconds = 0.25;
         private const double CueLateGraceSeconds = 0.04;
-        private const int BeatsPerBar = 4;
 
         private static bool _active;
         private static bool _toggleHintSpoken;
+        private static bool _defaultAppliedForCurrentGameplay;
         private static readonly HashSet<int> HandledSeqIds = new HashSet<int>();
 
         public static bool IsActive => _active;
@@ -25,6 +25,7 @@ namespace ADOFAI_Access
             if (!inGameplay)
             {
                 _toggleHintSpoken = false;
+                _defaultAppliedForCurrentGameplay = false;
             }
             else if (!_toggleHintSpoken)
             {
@@ -32,7 +33,16 @@ namespace ADOFAI_Access
                 MenuNarration.Speak(ToggleHint, interrupt: false);
             }
 
-            if (Input.GetKeyDown(ToggleKey))
+            if (inGameplay && !_defaultAppliedForCurrentGameplay)
+            {
+                _defaultAppliedForCurrentGameplay = true;
+                if (ModSettings.Current.patternPreviewEnabledByDefault && !_active && !LevelPreview.IsActive)
+                {
+                    StartInternal();
+                }
+            }
+
+            if (!AccessSettingsMenu.IsOpen && Input.GetKeyDown(ToggleKey))
             {
                 if (!Toggle())
                 {
@@ -251,12 +261,17 @@ namespace ADOFAI_Access
         private static bool TryGetPreviewCueDsp(scrConductor conductor, List<scrFloor> floors, scrFloor targetFloor, out double previewDueDsp)
         {
             previewDueDsp = 0d;
+            int beatsAhead = ModSettings.Current.patternPreviewBeatsAhead;
+            if (beatsAhead <= 0)
+            {
+                return false;
+            }
 
-            double previewBeat = targetFloor.entryBeat - BeatsPerBar;
+            double previewBeat = targetFloor.entryBeat - beatsAhead;
             if (previewBeat < 0.0)
             {
                 float pitchEarly = conductor.song != null && conductor.song.pitch > 0f ? conductor.song.pitch : 1f;
-                double earlyLeadSeconds = conductor.crotchetAtStart * BeatsPerBar / pitchEarly;
+                double earlyLeadSeconds = conductor.crotchetAtStart * beatsAhead / pitchEarly;
                 previewDueDsp = conductor.dspTimeSongPosZero + targetFloor.entryTimePitchAdj - earlyLeadSeconds;
                 return true;
             }
@@ -269,7 +284,7 @@ namespace ADOFAI_Access
 
             // Fallback when beat->time interpolation is unavailable.
             float pitch = conductor.song != null && conductor.song.pitch > 0f ? conductor.song.pitch : 1f;
-            double leadSeconds = conductor.crotchetAtStart * BeatsPerBar / pitch;
+            double leadSeconds = conductor.crotchetAtStart * beatsAhead / pitch;
             previewDueDsp = conductor.dspTimeSongPosZero + targetFloor.entryTimePitchAdj - leadSeconds;
             return true;
         }

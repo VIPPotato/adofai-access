@@ -21,6 +21,11 @@ namespace ADOFAI_Access
 
         public static void Tick()
         {
+            if (AccessSettingsMenu.IsOpen)
+            {
+                return;
+            }
+
             if (!Input.GetKeyDown(DumpHotkey))
             {
                 return;

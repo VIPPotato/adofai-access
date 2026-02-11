@@ -41,7 +41,7 @@ namespace ADOFAI_Access
                 MenuNarration.Speak(ToggleHint, interrupt: false);
             }
 
-            if (WasTogglePressed())
+            if (!AccessSettingsMenu.IsOpen && WasTogglePressed())
             {
                 if (!Toggle())
                 {
@@ -260,6 +260,7 @@ namespace ADOFAI_Access
             // If slightly past center due to frame timing, play immediately as late-grace fallback.
             PlayTapCue();
         }
+
     }
 
     [HarmonyPatch(typeof(scrController), "Won_Enter")]

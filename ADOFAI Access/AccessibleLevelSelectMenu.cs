@@ -26,6 +26,11 @@ namespace ADOFAI_Access
 
         public static void Tick()
         {
+            if (AccessSettingsMenu.IsOpen)
+            {
+                return;
+            }
+
             bool inLevelSelect = ADOBase.sceneName == GCNS.sceneLevelSelect && ADOBase.levelSelect is scnLevelSelect;
             if (!inLevelSelect)
             {
