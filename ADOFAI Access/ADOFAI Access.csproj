@@ -434,6 +434,12 @@
 		<Compile Include="TapCueService.cs" />
 		<Compile Include="Tolk.cs" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Audio\tap.wav">
+			<LogicalName>ADOFAI_Access.Audio.tap.wav</LogicalName>
+		</EmbeddedResource>
+	</ItemGroup>
 	
 	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
 		<Exec Command="COPY &quot;$(TargetPath)&quot; &quot;D:\Programiranje\C#\A Dance of Fire and Ice Mod\game\Mods&quot;" />
