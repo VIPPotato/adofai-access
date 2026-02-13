@@ -35,7 +35,7 @@ namespace ADOFAI_Access
             get
             {
                 string gameRoot = GetGameRoot();
-                return Path.Combine(gameRoot, "UserData", "ADOFAI_Access", "Audio", "level_preview_tap.wav");
+                return Path.Combine(gameRoot, "UserData", "ADOFAI_Access", "Audio", "tap.wav");
             }
         }
 
