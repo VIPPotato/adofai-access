@@ -32,8 +32,8 @@ Controls:
 - `Enter` / `Space`: toggle
 - `Escape`: close
 
-### Accessible level select menu (`F6`)
-Due to the game's main menu being itself rhythm based and very hard to make accessible, the mod adds a custom main menu that allows access to everything that would normally be accessed from the game's rhythm based menu
+### Accessible menu (`F6`)
+Due to some of the game's menus like the main menu and the custom levels menu being themselves rhythm based and very hard to make accessible, the mod adds a custom linear menu accessible with F6 that allows access to everything that would normally be accessed in those rhythm based menus
 
 Controls:
 - `Up` / `Down`: move
@@ -53,3 +53,5 @@ Writes level/runtime JSON dumps to `UserData/ADOFAI_Access/LevelDumps`. Not usef
 ### Audio cue customization
 While the mod ships with all the needed sounds, you can customize them by placing appropriately named files in `UserData/ADOFAI_Access/Audio`. The files have to be in the WAV format.
 - `tap.wav`: the tap audio cue
+- `listen_start.wav`: the audio cue for the start of listen groups in listen-repeat (is expected to be exactly 1 beat long at 128BPM)
+- `listen_end.wav`: the audio cue for the end of listen groups in listen-repeat (is expected to be exactly 1 beat long at 128BPM)
