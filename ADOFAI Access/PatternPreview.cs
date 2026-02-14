@@ -313,8 +313,73 @@ namespace ADOFAI_Access
                 return;
             }
 
-            RDC.auto = false;
+            // Edge case: if a repeat target was never cued during the listen phase
+            // (for example near level end), temporarily automate that target.
+            RDC.auto = ShouldForceAutoForUncuedRepeatTarget(controller);
             ApplyListenDucking(conductor, shouldDuck: false);
+        }
+
+        private static bool ShouldForceAutoForUncuedRepeatTarget(scrController controller)
+        {
+            if (controller == null)
+            {
+                return false;
+            }
+
+            scrFloor current = controller.currFloor;
+            scrFloor target = current != null ? current.nextfloor : null;
+            if (target == null || target.auto)
+            {
+                return false;
+            }
+
+            if (HandledSeqIds.Contains(target.seqID))
+            {
+                return false;
+            }
+
+            return IsLastRequiredFloor(target);
+        }
+
+        private static bool IsLastRequiredFloor(scrFloor target)
+        {
+            if (target == null)
+            {
+                return false;
+            }
+
+            List<scrFloor> floors = ADOBase.lm != null ? ADOBase.lm.listFloors : null;
+            if (floors == null || floors.Count == 0)
+            {
+                return false;
+            }
+
+            bool seenTarget = false;
+            for (int i = 0; i < floors.Count; i++)
+            {
+                scrFloor floor = floors[i];
+                if (floor == null)
+                {
+                    continue;
+                }
+
+                if (!seenTarget)
+                {
+                    if (ReferenceEquals(floor, target) || floor.seqID == target.seqID)
+                    {
+                        seenTarget = true;
+                    }
+
+                    continue;
+                }
+
+                if (!floor.auto)
+                {
+                    return false;
+                }
+            }
+
+            return seenTarget;
         }
 
         private static void TryScheduleListenBoundaryCues(scrConductor conductor, int beatsPerGroup, int currentGroupIndex)
