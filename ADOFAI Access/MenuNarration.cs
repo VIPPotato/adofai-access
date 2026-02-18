@@ -1185,7 +1185,7 @@ namespace ADOFAI_Access
     {
         private static void Postfix()
         {
-            if (ADOBase.isPlayingLevel)
+            if (ADOBase.isScnGame || ADOBase.isPlayingLevel)
             {
                 MenuNarration.SpeakDeath();
             }
